@@ -20,7 +20,7 @@ func main() {
 	router.Handle("/topics", &get.Handler{})
 	router.Handle("/topic", &post.Handler{})
 
-	api := rest.NewAPI("messages", "1.0.0")
+	api := rest.NewAPI("messages")
 	api.StripPkgPaths = []string{"github.com/a-h/rest/example", "github.com/a-h/respond"}
 
 	// It's possible to customise the OpenAPI schema for each type.
@@ -32,13 +32,13 @@ func main() {
 	})
 
 	api.Get("/topics").
-		HasResponse(http.StatusOK, rest.ModelOf[get.TopicsGetResponse](), "").
-		HasResponse(http.StatusInternalServerError, rest.ModelOf[respond.Error](), "")
+		HasResponse(http.StatusOK, rest.ModelOf[get.TopicsGetResponse]()).
+		HasResponse(http.StatusInternalServerError, rest.ModelOf[respond.Error]())
 
 	api.Post("/topic").
-		HasRequest(rest.ModelOf[post.TopicPostRequest](), "").
-		HasResponse(http.StatusOK, rest.ModelOf[post.TopicPostResponse](), "").
-		HasResponse(http.StatusInternalServerError, rest.ModelOf[respond.Error](), "")
+		HasRequest(rest.ModelOf[post.TopicPostRequest]()).
+		HasResponse(http.StatusOK, rest.ModelOf[post.TopicPostResponse]()).
+		HasResponse(http.StatusInternalServerError, rest.ModelOf[respond.Error]())
 
 	// Create the spec.
 	spec, err := api.Spec()

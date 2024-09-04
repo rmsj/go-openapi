@@ -62,7 +62,9 @@ func newPrimitiveSchema(paramType PrimitiveType) *openapi3.Schema {
 
 func (api *API) createOpenAPI() (spec *openapi3.T, err error) {
 	spec = newSpec(api.Name)
-	spec.Info.Version = api.Version
+	if api.Version != "" {
+		spec.Info.Version = api.Version
+	}
 	// Add all the routes.
 	for pattern, methodToRoute := range api.Routes {
 		path := &openapi3.PathItem{}
@@ -289,6 +291,7 @@ func (api *API) RegisterModel(model Model, opts ...ModelOpts) (name string, sche
 
 	var elementName string
 	var elementSchema *openapi3.Schema
+
 	switch t.Kind() {
 	case reflect.Slice, reflect.Array:
 		elementName, elementSchema, err = api.RegisterModel(modelFromType(t.Elem()))

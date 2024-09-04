@@ -21,7 +21,7 @@ See the [./examples](./examples) directory for complete examples.
 
 ```go
 // Configure the models.
-api := rest.NewAPI("messages", "1.0.0")
+api := rest.NewAPI("messages")
 api.StripPkgPaths = []string{"github.com/a-h/rest/example", "github.com/a-h/respond"}
 
 api.RegisterModel(*rest.ModelOf[respond.Error](), rest.WithDescription("Standard JSON error"), func(s *openapi3.Schema) {
@@ -57,7 +57,7 @@ router := http.NewServeMux()
 router.Handle("/topics", &get.Handler{})
 router.Handle("/topic", &post.Handler{})
 
-api := rest.NewAPI("messages", "1.0.0")
+api := rest.NewAPI("messages")
 api.StripPkgPaths = []string{"github.com/a-h/rest/example", "github.com/a-h/respond"}
 
 // Register the error type with customisations.

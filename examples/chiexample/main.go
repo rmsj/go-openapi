@@ -52,7 +52,7 @@ func main() {
 	})
 
 	// Create the API definition.
-	api := rest.NewAPI("Messaging API", "1.0.0")
+	api := rest.NewAPI("Messaging API")
 
 	// Create the routes and parameters of the Router in the REST API definition with an
 	// adapter, or do it manually.
@@ -76,17 +76,17 @@ func main() {
 
 	// Document the routes.
 	api.Get("/topic/{id}").
-		HasResponse(http.StatusOK, rest.ModelOf[models.TopicsGetResponse](), "topic response").
-		HasResponse(http.StatusInternalServerError, rest.ModelOf[respond.Error](), "error response")
+		HasResponse(http.StatusOK, rest.ModelOf[models.TopicsGetResponse]()).
+		HasResponse(http.StatusInternalServerError, rest.ModelOf[respond.Error]())
 
 	api.Get("/topics").
-		HasResponse(http.StatusOK, rest.ModelOf[models.TopicsGetResponse](), "topic response").
-		HasResponse(http.StatusInternalServerError, rest.ModelOf[respond.Error](), "error response")
+		HasResponse(http.StatusOK, rest.ModelOf[models.TopicsGetResponse]()).
+		HasResponse(http.StatusInternalServerError, rest.ModelOf[respond.Error]())
 
 	api.Post("/topics").
-		HasRequest(rest.ModelOf[models.TopicsPostRequest](), "topic request").
-		HasResponse(http.StatusOK, rest.ModelOf[models.TopicsPostResponse](), "topic response").
-		HasResponse(http.StatusInternalServerError, rest.ModelOf[respond.Error](), "error response")
+		HasRequest(rest.ModelOf[models.TopicsPostRequest]()).
+		HasResponse(http.StatusOK, rest.ModelOf[models.TopicsPostResponse]()).
+		HasResponse(http.StatusInternalServerError, rest.ModelOf[respond.Error]())
 
 	// Create the spec.
 	spec, err := api.Spec()

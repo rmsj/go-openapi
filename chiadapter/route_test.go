@@ -17,7 +17,7 @@ func TestMerge(t *testing.T) {
 	router := chi.NewRouter()
 	router.Method(http.MethodGet, pattern,
 		http.RedirectHandler("/elsewhere", http.StatusMovedPermanently))
-	api := rest.NewAPI("test", "1.0.0")
+	api := rest.NewAPI("test")
 
 	// Act.
 	err := chiadapter.Merge(api, router)

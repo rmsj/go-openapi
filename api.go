@@ -9,6 +9,7 @@ import (
 )
 
 type APIOpts func(*API)
+type RouteOpts func(*Route)
 
 // WithApplyCustomSchemaToType enables customisation of types in the OpenAPI specification.
 // Apply customisation to a specific type by checking the t parameter.
@@ -20,10 +21,9 @@ func WithApplyCustomSchemaToType(f func(t reflect.Type, s *openapi3.Schema)) API
 }
 
 // NewAPI creates a new API from the router.
-func NewAPI(name string, version string, opts ...APIOpts) *API {
+func NewAPI(name string, opts ...APIOpts) *API {
 	api := &API{
 		Name:       name,
-		Version:    version,
 		KnownTypes: defaultKnownTypes,
 		Routes:     make(map[Pattern]MethodToRoute),
 		// map of model name to schema.
@@ -179,6 +179,12 @@ func mergeMap[TKey comparable, TValue any](into, from map[TKey]TValue) {
 	}
 }
 
+// WithVersion sets the API version
+func (api *API) WithVersion(version string) *API {
+	api.Version = version
+	return api
+}
+
 // Spec creates an OpenAPI 3.0 specification document for the API.
 func (api *API) Spec() (spec *openapi3.T, err error) {
 	spec, err = api.createOpenAPI()
@@ -262,20 +268,24 @@ func (api *API) Trace(pattern string) (r *Route) {
 // Example:
 //
 //	api.Get("/user").HasResponse(http.StatusOK, rest.ModelOf[User]())
-func (rm *Route) HasResponse(status int, resp *Model, desc string) *Route {
+func (rm *Route) HasResponse(status int, resp *Model, opts ...RouteOpts) *Route {
 	rm.Models.Responses[status] = Response{
-		Description: desc,
-		Content:     resp,
+		Content: resp,
+	}
+	for _, o := range opts {
+		o(rm)
 	}
 	return rm
 }
 
 // HasRequest configures the request model of the route.
 // Example: api.Post("/user").HasRequest(http.StatusOK, rest.ModelOf[User]())
-func (rm *Route) HasRequest(request *Model, desc string) *Route {
+func (rm *Route) HasRequest(request *Model, opts ...RouteOpts) *Route {
 	rm.Models.Request = Request{
-		Description: desc,
-		Content:     request,
+		Content: request,
+	}
+	for _, o := range opts {
+		o(rm)
 	}
 	return rm
 }
