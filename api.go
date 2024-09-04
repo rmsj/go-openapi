@@ -20,9 +20,10 @@ func WithApplyCustomSchemaToType(f func(t reflect.Type, s *openapi3.Schema)) API
 }
 
 // NewAPI creates a new API from the router.
-func NewAPI(name string, opts ...APIOpts) *API {
+func NewAPI(name string, version string, opts ...APIOpts) *API {
 	api := &API{
 		Name:       name,
+		Version:    version,
 		KnownTypes: defaultKnownTypes,
 		Routes:     make(map[Pattern]MethodToRoute),
 		// map of model name to schema.
@@ -121,6 +122,8 @@ type Pattern string
 type API struct {
 	// Name of the API.
 	Name string
+	// Version of the API.
+	Version string
 	// Routes of the API.
 	// From patterns, to methods, to route.
 	Routes map[Pattern]MethodToRoute
@@ -161,7 +164,7 @@ func (api *API) Merge(r Route) {
 	toUpdate := api.Route(string(r.Method), string(r.Pattern))
 	mergeMap(toUpdate.Params.Path, r.Params.Path)
 	mergeMap(toUpdate.Params.Query, r.Params.Query)
-	if toUpdate.Models.Request.Type == nil {
+	if toUpdate.Models.Request.Content == nil {
 		toUpdate.Models.Request = r.Models.Request
 	}
 	mergeMap(toUpdate.Models.Responses, r.Models.Responses)
@@ -198,7 +201,7 @@ func (api *API) Route(method, pattern string) (r *Route) {
 			Method:  Method(method),
 			Pattern: Pattern(pattern),
 			Models: Models{
-				Responses: make(map[int]Model),
+				Responses: make(map[int]Response),
 			},
 			Params: Params{
 				Path:  make(map[string]PathParam),
@@ -255,21 +258,25 @@ func (api *API) Trace(pattern string) (r *Route) {
 	return api.Route(http.MethodTrace, pattern)
 }
 
-// HasResponseModel configures a response for the route.
+// HasResponse configures a response for the route.
 // Example:
 //
-//	api.Get("/user").HasResponseModel(http.StatusOK, rest.ModelOf[User]())
-func (rm *Route) HasResponseModel(status int, response Model) *Route {
-	rm.Models.Responses[status] = response
+//	api.Get("/user").HasResponse(http.StatusOK, rest.ModelOf[User]())
+func (rm *Route) HasResponse(status int, resp *Model, desc string) *Route {
+	rm.Models.Responses[status] = Response{
+		Description: desc,
+		Content:     resp,
+	}
 	return rm
 }
 
-// HasResponseModel configures the request model of the route.
-// Example:
-//
-//	api.Post("/user").HasRequestModel(http.StatusOK, rest.ModelOf[User]())
-func (rm *Route) HasRequestModel(request Model) *Route {
-	rm.Models.Request = request
+// HasRequest configures the request model of the route.
+// Example: api.Post("/user").HasRequest(http.StatusOK, rest.ModelOf[User]())
+func (rm *Route) HasRequest(request *Model, desc string) *Route {
+	rm.Models.Request = Request{
+		Description: desc,
+		Content:     request,
+	}
 	return rm
 }
 
@@ -303,14 +310,24 @@ func (rm *Route) HasDescription(description string) *Route {
 	return rm
 }
 
+type Request struct {
+	Description string
+	Content     *Model
+}
+
+type Response struct {
+	Description string
+	Content     *Model
+}
+
 // Models defines the models used by a route.
 type Models struct {
-	Request   Model
-	Responses map[int]Model
+	Request   Request
+	Responses map[int]Response
 }
 
 // ModelOf creates a model of type T.
-func ModelOf[T any]() Model {
+func ModelOf[T any]() *Model {
 	var t T
 	m := Model{
 		Type: reflect.TypeOf(t),
@@ -318,7 +335,7 @@ func ModelOf[T any]() Model {
 	if sm, ok := any(t).(CustomSchemaApplier); ok {
 		m.s = sm.ApplyCustomSchema
 	}
-	return m
+	return &m
 }
 
 func modelFromType(t reflect.Type) Model {

@@ -7,10 +7,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/a-h/rest/enums"
-	"github.com/a-h/rest/getcomments/parser"
 	"github.com/getkin/kin-openapi/openapi3"
 	"golang.org/x/exp/constraints"
+
+	"github.com/a-h/rest/enums"
+	"github.com/a-h/rest/getcomments/parser"
 )
 
 func newSpec(name string) *openapi3.T {
@@ -61,6 +62,7 @@ func newPrimitiveSchema(paramType PrimitiveType) *openapi3.Schema {
 
 func (api *API) createOpenAPI() (spec *openapi3.T, err error) {
 	spec = newSpec(api.Name)
+	spec.Info.Version = api.Version
 	// Add all the routes.
 	for pattern, methodToRoute := range api.Routes {
 		path := &openapi3.PathItem{}
@@ -106,33 +108,39 @@ func (api *API) createOpenAPI() (spec *openapi3.T, err error) {
 			}
 
 			// Handle request types.
-			if route.Models.Request.Type != nil {
-				name, schema, err := api.RegisterModel(route.Models.Request)
+			if route.Models.Request.Content != nil {
+				name, schema, err := api.RegisterModel(*route.Models.Request.Content)
 				if err != nil {
 					return spec, err
 				}
 				op.RequestBody = &openapi3.RequestBodyRef{
-					Value: openapi3.NewRequestBody().WithContent(map[string]*openapi3.MediaType{
-						"application/json": {
-							Schema: getSchemaReferenceOrValue(name, schema),
-						},
-					}),
+					Value: openapi3.NewRequestBody().
+						WithContent(map[string]*openapi3.MediaType{
+							"application/json": {
+								Schema: getSchemaReferenceOrValue(name, schema),
+							},
+						}).
+						WithDescription(route.Models.Request.Description),
 				}
 			}
 
 			// Handle response types.
-			for status, model := range route.Models.Responses {
-				name, schema, err := api.RegisterModel(model)
-				if err != nil {
-					return spec, err
-				}
+			for status, response := range route.Models.Responses {
 				resp := openapi3.NewResponse().
-					WithDescription("").
-					WithContent(map[string]*openapi3.MediaType{
+					WithDescription(response.Description)
+
+				if response.Content != nil {
+					name, schema, err := api.RegisterModel(*response.Content)
+					if err != nil {
+						return spec, err
+					}
+					resp.WithContent(map[string]*openapi3.MediaType{
 						"application/json": {
 							Schema: getSchemaReferenceOrValue(name, schema),
 						},
 					})
+				}
+
 				op.AddResponse(status, resp)
 			}
 

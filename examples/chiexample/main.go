@@ -6,12 +6,13 @@ import (
 	"net/http"
 
 	"github.com/a-h/respond"
+	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/go-chi/chi/v5"
+
 	"github.com/a-h/rest"
 	"github.com/a-h/rest/chiadapter"
 	"github.com/a-h/rest/examples/chiexample/models"
 	"github.com/a-h/rest/swaggerui"
-	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/go-chi/chi/v5"
 )
 
 func main() {
@@ -51,35 +52,41 @@ func main() {
 	})
 
 	// Create the API definition.
-	api := rest.NewAPI("Messaging API")
+	api := rest.NewAPI("Messaging API", "1.0.0")
 
 	// Create the routes and parameters of the Router in the REST API definition with an
 	// adapter, or do it manually.
-	chiadapter.Merge(api, router)
+	err := chiadapter.Merge(api, router)
+	if err != nil {
+		log.Fatalf("failed to create routes: %v", err)
+	}
 
 	// Because this example is all in the main package, we can strip the `main_` namespace from
 	// the types.
 	api.StripPkgPaths = []string{"main", "github.com/a-h"}
 
 	// It's possible to customise the OpenAPI schema for each type.
-	api.RegisterModel(rest.ModelOf[respond.Error](), rest.WithDescription("Standard JSON error"), func(s *openapi3.Schema) {
+	_, _, err = api.RegisterModel(*rest.ModelOf[respond.Error](), rest.WithDescription("Standard JSON error"), func(s *openapi3.Schema) {
 		status := s.Properties["statusCode"]
 		status.Value.WithMin(100).WithMax(600)
 	})
+	if err != nil {
+		log.Fatalf("failed to register model: %v", err)
+	}
 
 	// Document the routes.
 	api.Get("/topic/{id}").
-		HasResponseModel(http.StatusOK, rest.ModelOf[models.TopicsGetResponse]()).
-		HasResponseModel(http.StatusInternalServerError, rest.ModelOf[respond.Error]())
+		HasResponse(http.StatusOK, rest.ModelOf[models.TopicsGetResponse](), "topic response").
+		HasResponse(http.StatusInternalServerError, rest.ModelOf[respond.Error](), "error response")
 
 	api.Get("/topics").
-		HasResponseModel(http.StatusOK, rest.ModelOf[models.TopicsGetResponse]()).
-		HasResponseModel(http.StatusInternalServerError, rest.ModelOf[respond.Error]())
+		HasResponse(http.StatusOK, rest.ModelOf[models.TopicsGetResponse](), "topic response").
+		HasResponse(http.StatusInternalServerError, rest.ModelOf[respond.Error](), "error response")
 
 	api.Post("/topics").
-		HasRequestModel(rest.ModelOf[models.TopicsPostRequest]()).
-		HasResponseModel(http.StatusOK, rest.ModelOf[models.TopicsPostResponse]()).
-		HasResponseModel(http.StatusInternalServerError, rest.ModelOf[respond.Error]())
+		HasRequest(rest.ModelOf[models.TopicsPostRequest](), "topic request").
+		HasResponse(http.StatusOK, rest.ModelOf[models.TopicsPostResponse](), "topic response").
+		HasResponse(http.StatusInternalServerError, rest.ModelOf[respond.Error](), "error response")
 
 	// Create the spec.
 	spec, err := api.Spec()

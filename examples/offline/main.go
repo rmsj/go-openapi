@@ -7,17 +7,18 @@ import (
 	"os"
 
 	"github.com/a-h/respond"
+	"github.com/getkin/kin-openapi/openapi3"
+
 	"github.com/a-h/rest"
 	"github.com/a-h/rest/examples/offline/models"
-	"github.com/getkin/kin-openapi/openapi3"
 )
 
 func main() {
 	// Configure the models.
-	api := rest.NewAPI("messages")
+	api := rest.NewAPI("messages", "1.0.0")
 	api.StripPkgPaths = []string{"github.com/a-h/rest/example", "github.com/a-h/respond"}
 
-	api.RegisterModel(rest.ModelOf[respond.Error](), rest.WithDescription("Standard JSON error"), func(s *openapi3.Schema) {
+	api.RegisterModel(*rest.ModelOf[respond.Error](), rest.WithDescription("Standard JSON error"), func(s *openapi3.Schema) {
 		status := s.Properties["statusCode"]
 		status.Value.WithMin(100).WithMax(600)
 	})
@@ -27,8 +28,8 @@ func main() {
 			Description: "id of the topic",
 			Regexp:      `\d+`,
 		}).
-		HasResponseModel(http.StatusOK, rest.ModelOf[models.Topic]()).
-		HasResponseModel(http.StatusInternalServerError, rest.ModelOf[respond.Error]()).
+		HasResponse(http.StatusOK, rest.ModelOf[models.Topic](), "").
+		HasResponse(http.StatusInternalServerError, rest.ModelOf[respond.Error](), "").
 		HasTags([]string{"Topic"}).
 		HasDescription("Get one topic by id").
 		HasOperationID("getOneTopic")

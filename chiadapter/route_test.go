@@ -4,10 +4,11 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/a-h/rest"
-	"github.com/a-h/rest/chiadapter"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/a-h/rest"
+	"github.com/a-h/rest/chiadapter"
 )
 
 func TestMerge(t *testing.T) {
@@ -16,7 +17,7 @@ func TestMerge(t *testing.T) {
 	router := chi.NewRouter()
 	router.Method(http.MethodGet, pattern,
 		http.RedirectHandler("/elsewhere", http.StatusMovedPermanently))
-	api := rest.NewAPI("test")
+	api := rest.NewAPI("test", "1.0.0")
 
 	// Act.
 	err := chiadapter.Merge(api, router)
