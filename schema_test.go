@@ -2,7 +2,6 @@ package rest
 
 import (
 	"embed"
-	_ "embed"
 	"encoding/json"
 	"fmt"
 	"net/http"
