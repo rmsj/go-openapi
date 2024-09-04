@@ -110,8 +110,8 @@ func (api *API) createOpenAPI() (spec *openapi3.T, err error) {
 			}
 
 			// Handle request types.
-			if route.Models.Request.Content != nil {
-				name, schema, err := api.RegisterModel(*route.Models.Request.Content)
+			if route.Models.Request.Content.Type != nil {
+				name, schema, err := api.RegisterModel(route.Models.Request.Content)
 				if err != nil {
 					return spec, err
 				}
@@ -131,8 +131,8 @@ func (api *API) createOpenAPI() (spec *openapi3.T, err error) {
 				resp := openapi3.NewResponse().
 					WithDescription(response.Description)
 
-				if response.Content != nil {
-					name, schema, err := api.RegisterModel(*response.Content)
+				if response.Content.Type != nil {
+					name, schema, err := api.RegisterModel(response.Content)
 					if err != nil {
 						return spec, err
 					}
@@ -291,7 +291,6 @@ func (api *API) RegisterModel(model Model, opts ...ModelOpts) (name string, sche
 
 	var elementName string
 	var elementSchema *openapi3.Schema
-
 	switch t.Kind() {
 	case reflect.Slice, reflect.Array:
 		elementName, elementSchema, err = api.RegisterModel(modelFromType(t.Elem()))

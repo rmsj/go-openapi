@@ -66,7 +66,7 @@ func main() {
 	api.StripPkgPaths = []string{"main", "github.com/a-h"}
 
 	// It's possible to customise the OpenAPI schema for each type.
-	_, _, err = api.RegisterModel(*rest.ModelOf[respond.Error](), rest.WithDescription("Standard JSON error"), func(s *openapi3.Schema) {
+	api.RegisterModel(rest.ModelOf[respond.Error](), rest.WithDescription("Standard JSON error"), func(s *openapi3.Schema) {
 		status := s.Properties["statusCode"]
 		status.Value.WithMin(100).WithMax(600)
 	})
@@ -76,17 +76,17 @@ func main() {
 
 	// Document the routes.
 	api.Get("/topic/{id}").
-		HasResponse(http.StatusOK, rest.ModelOf[models.TopicsGetResponse]()).
-		HasResponse(http.StatusInternalServerError, rest.ModelOf[respond.Error]())
+		HasResponseModel(http.StatusOK, rest.ModelOf[models.TopicsGetResponse]()).
+		HasResponseModel(http.StatusInternalServerError, rest.ModelOf[respond.Error]())
 
 	api.Get("/topics").
-		HasResponse(http.StatusOK, rest.ModelOf[models.TopicsGetResponse]()).
-		HasResponse(http.StatusInternalServerError, rest.ModelOf[respond.Error]())
+		HasResponseModel(http.StatusOK, rest.ModelOf[models.TopicsGetResponse]()).
+		HasResponseModel(http.StatusInternalServerError, rest.ModelOf[respond.Error]())
 
 	api.Post("/topics").
-		HasRequest(rest.ModelOf[models.TopicsPostRequest]()).
-		HasResponse(http.StatusOK, rest.ModelOf[models.TopicsPostResponse]()).
-		HasResponse(http.StatusInternalServerError, rest.ModelOf[respond.Error]())
+		HasRequestModel(rest.ModelOf[models.TopicsPostRequest]()).
+		HasResponseModel(http.StatusOK, rest.ModelOf[models.TopicsPostResponse]()).
+		HasResponseModel(http.StatusInternalServerError, rest.ModelOf[respond.Error]())
 
 	// Create the spec.
 	spec, err := api.Spec()

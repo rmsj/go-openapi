@@ -26,19 +26,19 @@ func main() {
 	// It's possible to customise the OpenAPI schema for each type.
 	// You can use helper functions, or write your own function that works
 	// directly on the openapi3.Schema type.
-	api.RegisterModel(*rest.ModelOf[respond.Error](), rest.WithDescription("Standard JSON error"), func(s *openapi3.Schema) {
+	api.RegisterModel(rest.ModelOf[respond.Error](), rest.WithDescription("Standard JSON error"), func(s *openapi3.Schema) {
 		status := s.Properties["statusCode"]
 		status.Value.WithMin(100).WithMax(600)
 	})
 
 	api.Get("/topics").
-		HasResponse(http.StatusOK, rest.ModelOf[get.TopicsGetResponse]()).
-		HasResponse(http.StatusInternalServerError, rest.ModelOf[respond.Error]())
+		HasResponseModel(http.StatusOK, rest.ModelOf[get.TopicsGetResponse]()).
+		HasResponseModel(http.StatusInternalServerError, rest.ModelOf[respond.Error]())
 
 	api.Post("/topic").
-		HasRequest(rest.ModelOf[post.TopicPostRequest]()).
-		HasResponse(http.StatusOK, rest.ModelOf[post.TopicPostResponse]()).
-		HasResponse(http.StatusInternalServerError, rest.ModelOf[respond.Error]())
+		HasRequestModel(rest.ModelOf[post.TopicPostRequest]()).
+		HasResponseModel(http.StatusOK, rest.ModelOf[post.TopicPostResponse]()).
+		HasResponseModel(http.StatusInternalServerError, rest.ModelOf[respond.Error]())
 
 	// Create the spec.
 	spec, err := api.Spec()

@@ -164,7 +164,7 @@ func (api *API) Merge(r Route) {
 	toUpdate := api.Route(string(r.Method), string(r.Pattern))
 	mergeMap(toUpdate.Params.Path, r.Params.Path)
 	mergeMap(toUpdate.Params.Query, r.Params.Query)
-	if toUpdate.Models.Request.Content == nil {
+	if toUpdate.Models.Request.Content.Type == nil {
 		toUpdate.Models.Request = r.Models.Request
 	}
 	mergeMap(toUpdate.Models.Responses, r.Models.Responses)
@@ -264,11 +264,11 @@ func (api *API) Trace(pattern string) (r *Route) {
 	return api.Route(http.MethodTrace, pattern)
 }
 
-// HasResponse configures a response for the route.
+// HasResponseModel configures a response for the route.
 // Example:
 //
-//	api.Get("/user").HasResponse(http.StatusOK, rest.ModelOf[User]())
-func (rm *Route) HasResponse(status int, resp *Model, opts ...RouteOpts) *Route {
+//	api.Get("/user").HasResponseModel(http.StatusOK, rest.ModelOf[User]())
+func (rm *Route) HasResponseModel(status int, resp Model, opts ...RouteOpts) *Route {
 	rm.Models.Responses[status] = Response{
 		Content: resp,
 	}
@@ -278,9 +278,9 @@ func (rm *Route) HasResponse(status int, resp *Model, opts ...RouteOpts) *Route 
 	return rm
 }
 
-// HasRequest configures the request model of the route.
-// Example: api.Post("/user").HasRequest(http.StatusOK, rest.ModelOf[User]())
-func (rm *Route) HasRequest(request *Model, opts ...RouteOpts) *Route {
+// HasRequestModel configures the request model of the route.
+// Example: api.Post("/user").HasRequestModel(http.StatusOK, rest.ModelOf[User]())
+func (rm *Route) HasRequestModel(request Model, opts ...RouteOpts) *Route {
 	rm.Models.Request = Request{
 		Content: request,
 	}
@@ -322,12 +322,12 @@ func (rm *Route) HasDescription(description string) *Route {
 
 type Request struct {
 	Description string
-	Content     *Model
+	Content     Model
 }
 
 type Response struct {
 	Description string
-	Content     *Model
+	Content     Model
 }
 
 // Models defines the models used by a route.
@@ -337,7 +337,7 @@ type Models struct {
 }
 
 // ModelOf creates a model of type T.
-func ModelOf[T any]() *Model {
+func ModelOf[T any]() Model {
 	var t T
 	m := Model{
 		Type: reflect.TypeOf(t),
@@ -345,7 +345,7 @@ func ModelOf[T any]() *Model {
 	if sm, ok := any(t).(CustomSchemaApplier); ok {
 		m.s = sm.ApplyCustomSchema
 	}
-	return &m
+	return m
 }
 
 func modelFromType(t reflect.Type) Model {

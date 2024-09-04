@@ -18,7 +18,7 @@ func main() {
 	api := rest.NewAPI("messages")
 	api.StripPkgPaths = []string{"github.com/a-h/rest/example", "github.com/a-h/respond"}
 
-	api.RegisterModel(*rest.ModelOf[respond.Error](), rest.WithDescription("Standard JSON error"), func(s *openapi3.Schema) {
+	api.RegisterModel(rest.ModelOf[respond.Error](), rest.WithDescription("Standard JSON error"), func(s *openapi3.Schema) {
 		status := s.Properties["statusCode"]
 		status.Value.WithMin(100).WithMax(600)
 	})
@@ -28,8 +28,8 @@ func main() {
 			Description: "id of the topic",
 			Regexp:      `\d+`,
 		}).
-		HasResponse(http.StatusOK, rest.ModelOf[models.Topic]()).
-		HasResponse(http.StatusInternalServerError, rest.ModelOf[respond.Error]()).
+		HasResponseModel(http.StatusOK, rest.ModelOf[models.Topic]()).
+		HasResponseModel(http.StatusInternalServerError, rest.ModelOf[respond.Error]()).
 		HasTags([]string{"Topic"}).
 		HasDescription("Get one topic by id").
 		HasOperationID("getOneTopic")

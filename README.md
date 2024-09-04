@@ -24,7 +24,7 @@ See the [./examples](./examples) directory for complete examples.
 api := rest.NewAPI("messages")
 api.StripPkgPaths = []string{"github.com/a-h/rest/example", "github.com/a-h/respond"}
 
-api.RegisterModel(*rest.ModelOf[respond.Error](), rest.WithDescription("Standard JSON error"), func(s *openapi3.Schema) {
+api.RegisterModel(rest.ModelOf[respond.Error](), rest.WithDescription("Standard JSON error"), func(s *openapi3.Schema) {
   status := s.Properties["statusCode"]
   status.Value.WithMin(100).WithMax(600)
 })
@@ -61,7 +61,7 @@ api := rest.NewAPI("messages")
 api.StripPkgPaths = []string{"github.com/a-h/rest/example", "github.com/a-h/respond"}
 
 // Register the error type with customisations.
-api.RegisterModel(*rest.ModelOf[respond.Error](), rest.WithDescription("Standard JSON error"), func(s *openapi3.Schema) {
+api.RegisterModel(rest.ModelOf[respond.Error](), rest.WithDescription("Standard JSON error"), func(s *openapi3.Schema) {
   status := s.Properties["statusCode"]
   status.Value.WithMin(100).WithMax(600)
 })

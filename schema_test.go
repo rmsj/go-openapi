@@ -192,8 +192,8 @@ func TestSchema(t *testing.T) {
 			name: "test001.yaml",
 			setup: func(api *API) error {
 				api.Post("/test").
-					HasRequest(ModelOf[TestRequestType]()).
-					HasResponse(http.StatusOK, ModelOf[TestResponseType]()).
+					HasRequestModel(ModelOf[TestRequestType]()).
+					HasResponseModel(http.StatusOK, ModelOf[TestResponseType]()).
 					HasDescription("Test request type description").
 					HasTags([]string{"TestRequest"})
 				return nil
@@ -203,8 +203,8 @@ func TestSchema(t *testing.T) {
 			name: "basic-data-types.yaml",
 			setup: func(api *API) error {
 				api.Post("/test").
-					HasRequest(ModelOf[AllBasicDataTypes]()).
-					HasResponse(http.StatusOK, ModelOf[AllBasicDataTypes]()).
+					HasRequestModel(ModelOf[AllBasicDataTypes]()).
+					HasResponseModel(http.StatusOK, ModelOf[AllBasicDataTypes]()).
 					HasOperationID("postAllBasicDataTypes").
 					HasTags([]string{"BasicData"}).
 					HasDescription("Post all basic data types description")
@@ -215,8 +215,8 @@ func TestSchema(t *testing.T) {
 			name: "basic-data-types-pointers.yaml",
 			setup: func(api *API) error {
 				api.Post("/test").
-					HasRequest(ModelOf[AllBasicDataTypesPointers]()).
-					HasResponse(http.StatusOK, ModelOf[AllBasicDataTypesPointers]())
+					HasRequestModel(ModelOf[AllBasicDataTypesPointers]()).
+					HasResponseModel(http.StatusOK, ModelOf[AllBasicDataTypesPointers]())
 				return nil
 			},
 		},
@@ -224,8 +224,8 @@ func TestSchema(t *testing.T) {
 			name: "omit-empty-fields.yaml",
 			setup: func(api *API) error {
 				api.Post("/test").
-					HasRequest(ModelOf[OmitEmptyFields]()).
-					HasResponse(http.StatusOK, ModelOf[OmitEmptyFields]())
+					HasRequestModel(ModelOf[OmitEmptyFields]()).
+					HasResponseModel(http.StatusOK, ModelOf[OmitEmptyFields]())
 				return nil
 			},
 		},
@@ -233,8 +233,8 @@ func TestSchema(t *testing.T) {
 			name: "anonymous-type.yaml",
 			setup: func(api *API) error {
 				api.Post("/test").
-					HasRequest(ModelOf[struct{ A string }]()).
-					HasResponse(http.StatusOK, ModelOf[struct{ B string }]())
+					HasRequestModel(ModelOf[struct{ A string }]()).
+					HasResponseModel(http.StatusOK, ModelOf[struct{ B string }]())
 				return nil
 			},
 		},
@@ -242,10 +242,10 @@ func TestSchema(t *testing.T) {
 			name: "embedded-structs.yaml",
 			setup: func(api *API) error {
 				api.Get("/embedded").
-					HasResponse(http.StatusOK, ModelOf[EmbeddedStructA]())
+					HasResponseModel(http.StatusOK, ModelOf[EmbeddedStructA]())
 				api.Post("/test").
-					HasRequest(ModelOf[WithEmbeddedStructs]()).
-					HasResponse(http.StatusOK, ModelOf[WithEmbeddedStructs]())
+					HasRequestModel(ModelOf[WithEmbeddedStructs]()).
+					HasResponseModel(http.StatusOK, ModelOf[WithEmbeddedStructs]())
 				return nil
 			},
 		},
@@ -253,8 +253,8 @@ func TestSchema(t *testing.T) {
 			name: "with-name-struct-tags.yaml",
 			setup: func(api *API) error {
 				api.Post("/test").
-					HasRequest(ModelOf[WithNameStructTags]()).
-					HasResponse(http.StatusOK, ModelOf[WithNameStructTags]())
+					HasRequestModel(ModelOf[WithNameStructTags]()).
+					HasResponseModel(http.StatusOK, ModelOf[WithNameStructTags]())
 				return nil
 			},
 		},
@@ -262,22 +262,22 @@ func TestSchema(t *testing.T) {
 			name: "known-types.yaml",
 			setup: func(api *API) error {
 				api.Route(http.MethodGet, "/test").
-					HasResponse(http.StatusOK, ModelOf[KnownTypes]())
+					HasResponseModel(http.StatusOK, ModelOf[KnownTypes]())
 				return nil
 			},
 		},
 		{
 			name: "all-methods.yaml",
 			setup: func(api *API) (err error) {
-				api.Get("/get").HasResponse(http.StatusOK, ModelOf[OK]())
-				api.Head("/head").HasResponse(http.StatusOK, ModelOf[OK]())
-				api.Post("/post").HasResponse(http.StatusOK, ModelOf[OK]())
-				api.Put("/put").HasResponse(http.StatusOK, ModelOf[OK]())
-				api.Patch("/patch").HasResponse(http.StatusOK, ModelOf[OK]())
-				api.Delete("/delete").HasResponse(http.StatusOK, ModelOf[OK]())
-				api.Connect("/connect").HasResponse(http.StatusOK, ModelOf[OK]())
-				api.Options("/options").HasResponse(http.StatusOK, ModelOf[OK]())
-				api.Trace("/trace").HasResponse(http.StatusOK, ModelOf[OK]())
+				api.Get("/get").HasResponseModel(http.StatusOK, ModelOf[OK]())
+				api.Head("/head").HasResponseModel(http.StatusOK, ModelOf[OK]())
+				api.Post("/post").HasResponseModel(http.StatusOK, ModelOf[OK]())
+				api.Put("/put").HasResponseModel(http.StatusOK, ModelOf[OK]())
+				api.Patch("/patch").HasResponseModel(http.StatusOK, ModelOf[OK]())
+				api.Delete("/delete").HasResponseModel(http.StatusOK, ModelOf[OK]())
+				api.Connect("/connect").HasResponseModel(http.StatusOK, ModelOf[OK]())
+				api.Options("/options").HasResponseModel(http.StatusOK, ModelOf[OK]())
+				api.Trace("/trace").HasResponseModel(http.StatusOK, ModelOf[OK]())
 				return
 			},
 		},
@@ -285,10 +285,10 @@ func TestSchema(t *testing.T) {
 			name: "enums.yaml",
 			setup: func(api *API) (err error) {
 				// Register the enums and values.
-				api.RegisterModel(*ModelOf[StringEnum](), WithEnumValues(StringEnumA, StringEnumB, StringEnumC))
-				api.RegisterModel(*ModelOf[IntEnum](), WithEnumValues(IntEnum1, IntEnum2, IntEnum3))
+				api.RegisterModel(ModelOf[StringEnum](), WithEnumValues(StringEnumA, StringEnumB, StringEnumC))
+				api.RegisterModel(ModelOf[IntEnum](), WithEnumValues(IntEnum1, IntEnum2, IntEnum3))
 
-				api.Get("/get").HasResponse(http.StatusOK, ModelOf[WithEnums]())
+				api.Get("/get").HasResponseModel(http.StatusOK, ModelOf[WithEnums]())
 				return
 			},
 		},
@@ -296,17 +296,17 @@ func TestSchema(t *testing.T) {
 			name: "enum-constants.yaml",
 			setup: func(api *API) (err error) {
 				// Register the enums and values.
-				api.RegisterModel(*ModelOf[StringEnum](), WithEnumConstants[StringEnum]())
-				api.RegisterModel(*ModelOf[IntEnum](), WithEnumConstants[IntEnum]())
+				api.RegisterModel(ModelOf[StringEnum](), WithEnumConstants[StringEnum]())
+				api.RegisterModel(ModelOf[IntEnum](), WithEnumConstants[IntEnum]())
 
-				api.Get("/get").HasResponse(http.StatusOK, ModelOf[WithEnums]())
+				api.Get("/get").HasResponseModel(http.StatusOK, ModelOf[WithEnums]())
 				return
 			},
 		},
 		{
 			name: "with-maps.yaml",
 			setup: func(api *API) (err error) {
-				api.Get("/get").HasResponse(http.StatusOK, ModelOf[WithMaps]())
+				api.Get("/get").HasResponseModel(http.StatusOK, ModelOf[WithMaps]())
 				return
 			},
 		},
@@ -321,7 +321,7 @@ func TestSchema(t *testing.T) {
 					HasPathParameter("userId", PathParam{
 						Description: "User ID",
 					}).
-					HasResponse(http.StatusOK, ModelOf[User]())
+					HasResponseModel(http.StatusOK, ModelOf[User]())
 				return
 			},
 		},
@@ -338,7 +338,7 @@ func TestSchema(t *testing.T) {
 					HasPathParameter("userId", PathParam{
 						Description: "User ID",
 					}).
-					HasResponse(http.StatusOK, ModelOf[User]())
+					HasResponseModel(http.StatusOK, ModelOf[User]())
 				return
 			},
 		},
@@ -357,7 +357,7 @@ func TestSchema(t *testing.T) {
 						Type:        PrimitiveTypeString,
 						Regexp:      `field|otherField`,
 					}).
-					HasResponse(http.StatusOK, ModelOf[User]())
+					HasResponseModel(http.StatusOK, ModelOf[User]())
 				return
 			},
 		},
@@ -380,7 +380,7 @@ func TestSchema(t *testing.T) {
 							s.Description = "The field to order the results by"
 						},
 					}).
-					HasResponse(http.StatusOK, ModelOf[User]())
+					HasResponseModel(http.StatusOK, ModelOf[User]())
 				return
 			},
 		},
@@ -388,7 +388,7 @@ func TestSchema(t *testing.T) {
 			name: "multiple-dates-with-comments.yaml",
 			setup: func(api *API) (err error) {
 				api.Get("/dates").
-					HasResponse(http.StatusOK, ModelOf[MultipleDateFieldsWithComments]())
+					HasResponseModel(http.StatusOK, ModelOf[MultipleDateFieldsWithComments]())
 				return
 			},
 		},
@@ -396,9 +396,9 @@ func TestSchema(t *testing.T) {
 			name: "custom-models.yaml",
 			setup: func(api *API) (err error) {
 				api.Get("/struct-with-customisation").
-					HasResponse(http.StatusOK, ModelOf[StructWithCustomisation]())
+					HasResponseModel(http.StatusOK, ModelOf[StructWithCustomisation]())
 				api.Get("/struct-ptr-with-customisation").
-					HasResponse(http.StatusOK, ModelOf[*StructWithCustomisation]())
+					HasResponseModel(http.StatusOK, ModelOf[*StructWithCustomisation]())
 				return
 			},
 		},
@@ -436,7 +436,7 @@ func TestSchema(t *testing.T) {
 			},
 			setup: func(api *API) error {
 				api.Get("/").
-					HasResponse(http.StatusOK, ModelOf[StructWithTags]())
+					HasResponseModel(http.StatusOK, ModelOf[StructWithTags]())
 				return nil
 			},
 		},
