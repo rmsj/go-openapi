@@ -474,9 +474,17 @@ var normalizer = strings.NewReplacer("/", "_",
 func (api *API) normalizeTypeName(pkgPath, name string) string {
 	var omitPackage bool
 	for _, pkg := range api.StripPkgPaths {
+		if strings.Contains(pkgPath, "query") {
+			fmt.Printf("PACKAGE %v :::: %v ::: %v \n", pkgPath, pkg, name)
+		}
+
 		if strings.HasPrefix(pkgPath, pkg) {
 			omitPackage = true
 			break
+		}
+
+		if strings.Contains(name, pkg) {
+			name = strings.Replace(name, pkg+".", "", 1)
 		}
 	}
 	if omitPackage || pkgPath == "" {
