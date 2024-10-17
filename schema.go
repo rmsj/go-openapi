@@ -3,9 +3,11 @@ package rest
 import (
 	"fmt"
 	"reflect"
+	"regexp"
 	"slices"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"golang.org/x/exp/constraints"
@@ -336,9 +338,13 @@ func (api *API) RegisterModel(model Model, opts ...ModelOpts) (name string, sche
 			// Get JSON fieldName.
 			jsonTags := strings.Split(f.Tag.Get("json"), ",")
 			fieldName := jsonTags[0]
+			if fieldName == "-" {
+				continue
+			}
 			if fieldName == "" {
 				fieldName = f.Name
 			}
+
 			// If the model doesn't exist.
 			_, alreadyExists := api.models[api.getModelName(f.Type)]
 			fieldSchemaName, fieldSchema, err := api.RegisterModel(modelFromType(f.Type))
@@ -358,16 +364,35 @@ func (api *API) RegisterModel(model Model, opts ...ModelOpts) (name string, sche
 				schema.Required = append(schema.Required, fieldSchema.Required...)
 				continue
 			}
+
+			// get the validate tag
+			// Get JSON fieldName.
+			validateTags := strings.Split(f.Tag.Get("validate"), ",")
+			validateRequired := !slices.Contains(validateTags, "omitempty")
+			var enumParams []string
+			if IsEnum(f) {
+				enumParams = parseOneOfParam(f)
+			}
+
 			ref := getSchemaReferenceOrValue(fieldSchemaName, fieldSchema)
 			if ref.Value != nil {
 				if ref.Value.Description, ref.Value.Deprecated, err = api.getTypeFieldComment(t.PkgPath(), t.Name(), f.Name); err != nil {
 					return name, schema, fmt.Errorf("failed to get comments for field %q in type %q: %w", fieldName, name, err)
 				}
+				if len(enumParams) > 0 {
+					ref.Value = ref.Value.WithEnum(enumParams)
+				}
+
+			} else {
+				if len(enumParams) > 0 {
+					schema = schema.WithEnum(enumParams)
+				}
 			}
+
 			schema.Properties[fieldName] = ref
 			isPtr := f.Type.Kind() == reflect.Pointer
 			hasOmitEmptySet := slices.Contains(jsonTags, "omitempty")
-			if isFieldRequired(isPtr, hasOmitEmptySet) {
+			if isFieldRequired(isPtr, hasOmitEmptySet) && validateRequired {
 				schema.Required = append(schema.Required, fieldName)
 			}
 		}
@@ -458,4 +483,58 @@ func (api *API) normalizeTypeName(pkgPath, name string) string {
 		return normalizer.Replace(name)
 	}
 	return normalizer.Replace(pkgPath + "/" + name)
+}
+
+const (
+	splitParamsRegexString = `'[^']*'|\S+`
+)
+
+var (
+	oneofValsCache       = map[string][]string{}
+	oneofValsCacheRWLock = sync.RWMutex{}
+	splitParamsRegex     = lazyRegexCompile(splitParamsRegexString)
+)
+
+func lazyRegexCompile(str string) func() *regexp.Regexp {
+	var regex *regexp.Regexp
+	var once sync.Once
+	return func() *regexp.Regexp {
+		once.Do(func() {
+			regex = regexp.MustCompile(str)
+		})
+		return regex
+	}
+}
+
+func IsEnum(f reflect.StructField) bool {
+	return strings.Contains(f.Tag.Get("validate"), "oneof=")
+}
+
+func parseOneOfParam(f reflect.StructField) []string {
+
+	validateTags := strings.Split(f.Tag.Get("validate"), ",")
+
+	var enumTag string
+	for _, validation := range validateTags {
+		if strings.Contains(validation, "oneof=") {
+			enumTag = validation
+		}
+	}
+	if enumTag == "" {
+		return []string{}
+	}
+	enumTag = strings.Replace(enumTag, "oneof=", "", 1)
+	oneofValsCacheRWLock.RLock()
+	vals, ok := oneofValsCache[enumTag]
+	oneofValsCacheRWLock.RUnlock()
+	if !ok {
+		oneofValsCacheRWLock.Lock()
+		vals = splitParamsRegex().FindAllString(enumTag, -1)
+		for i := 0; i < len(vals); i++ {
+			vals[i] = strings.Replace(vals[i], "'", "", -1)
+		}
+		oneofValsCache[enumTag] = vals
+		oneofValsCacheRWLock.Unlock()
+	}
+	return vals
 }
