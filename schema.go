@@ -299,7 +299,7 @@ func (api *API) RegisterModel(model Model, opts ...ModelOpts) (name string, sche
 		if err != nil {
 			return name, schema, fmt.Errorf("error getting schema of slice element %v: %w", t.Elem(), err)
 		}
-		schema = openapi3.NewArraySchema().WithNullable() // Arrays are always nilable in Go.
+		schema = openapi3.NewArraySchema().WithNullable() // Arrays are always nullable in Go.
 		schema.Items = getSchemaReferenceOrValue(elementName, elementSchema)
 	case reflect.String:
 		schema = openapi3.NewStringSchema()
@@ -374,6 +374,11 @@ func (api *API) RegisterModel(model Model, opts ...ModelOpts) (name string, sche
 				enumParams = parseOneOfParam(f)
 			}
 
+			var dateFormat string
+			if IsDateTime(f) {
+				dateFormat = parseDateTimeParam(f)
+			}
+
 			ref := getSchemaReferenceOrValue(fieldSchemaName, fieldSchema)
 			if ref.Value != nil {
 				if ref.Value.Description, ref.Value.Deprecated, err = api.getTypeFieldComment(t.PkgPath(), t.Name(), f.Name); err != nil {
@@ -383,14 +388,23 @@ func (api *API) RegisterModel(model Model, opts ...ModelOpts) (name string, sche
 					ref.Value = ref.Value.WithEnum(enumParams)
 				}
 
+				if dateFormat != "" {
+					ref.Value = ref.Value.WithFormat(dateFormat)
+					ref.Value.Example = dateFormat
+				}
+
 			} else {
 				if len(enumParams) > 0 {
 					schema = schema.WithEnum(enumParams)
 				}
+				if dateFormat != "" {
+					ref.Value = ref.Value.WithFormat(dateFormat)
+					ref.Value.Example = dateFormat
+				}
 			}
 
 			schema.Properties[fieldName] = ref
-			isPtr := f.Type.Kind() == reflect.Pointer
+			isPtr := f.Type.Kind() == reflect.Pointer || f.Type.Kind() == reflect.Array
 			hasOmitEmptySet := slices.Contains(jsonTags, "omitempty")
 			if isFieldRequired(isPtr, hasOmitEmptySet) && validateRequired {
 				schema.Required = append(schema.Required, fieldName)
@@ -545,4 +559,37 @@ func parseOneOfParam(f reflect.StructField) []string {
 		oneofValsCacheRWLock.Unlock()
 	}
 	return vals
+}
+
+func IsDateTime(f reflect.StructField) bool {
+	return strings.Contains(f.Tag.Get("validate"), "datetime=")
+}
+
+func parseDateTimeParam(f reflect.StructField) string {
+	validateTags := strings.Split(f.Tag.Get("validate"), ",")
+
+	var dateTimeTag string
+	for _, validation := range validateTags {
+		if strings.Contains(validation, "datetime=") {
+			dateTimeTag = validation
+		}
+	}
+
+	return strings.Replace(dateTimeTag, "datetime=", "", 1)
+}
+
+func parseSetValues(f reflect.StructField) []string {
+	validateTags := strings.Split(f.Tag.Get("validate"), ",")
+
+	var diveTag string
+	for _, validation := range validateTags {
+		if validation == "dive" {
+			diveTag = validation
+		}
+	}
+	if diveTag == "" {
+		return []string{}
+	}
+
+	return parseOneOfParam(f)
 }
